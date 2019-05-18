@@ -1,11 +1,23 @@
 const socket = io();
+
+// Elements
 const $messageForm = document.querySelector('form')
 const $messageFormInput = document.querySelector('input')
 const $messageFormButton = document.querySelector('button')
 const $locationButton = document.getElementById("send-location");
+const $messages = document.querySelector("#messages");
+
+// Templates
+const messageTemplate = document.querySelector("#message-template").innerHTML;
+const locationTemplate = document.querySelector("#location-template").innerHTML;
+
 
 socket.on('newUser', (message) => {
-    console.log(message);
+    const html = Mustache.render(messageTemplate, {
+        message: message.text,
+        createdAt: moment(message.createdAt).format("h:mm a")
+    });
+    $messages.insertAdjacentHTML('beforeend', html);
 })
 
 $messageForm.addEventListener('submit', (event) => {
@@ -32,6 +44,13 @@ $locationButton.addEventListener('click', (event) => {
             setTimeout(geolocationFinder, 1000);
         });
 
+socket.on('locationMessage', (message) => {
+    const html = Mustache.render(locationTemplate, {
+        location: message.url,
+        createdAt: moment(message.createdAt).format("h:mm a")
+    });
+    $messages.insertAdjacentHTML('beforeend', html);
+})
 
 function geolocationFinder() {
     navigator.geolocation.getCurrentPosition((position) => {
