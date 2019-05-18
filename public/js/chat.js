@@ -1,7 +1,7 @@
 const socket = io();
 
 // Elements
-const $messageForm = document.querySelector('form')
+const $messageForm = document.querySelector('#text-message-form')
 const $messageFormInput = document.querySelector('input')
 const $messageFormButton = document.querySelector('button')
 const $locationButton = document.getElementById("send-location");
@@ -12,8 +12,12 @@ const messageTemplate = document.querySelector("#message-template").innerHTML;
 const locationTemplate = document.querySelector("#location-template").innerHTML;
 
 
+// Options
+const { username, room } = Qs.parse(location.search, { ignoreQueryPrefix: true });
+
 socket.on('newUser', (message) => {
     const html = Mustache.render(messageTemplate, {
+        username: message.username,
         message: message.text,
         createdAt: moment(message.createdAt).format("h:mm a")
     });
@@ -46,6 +50,7 @@ $locationButton.addEventListener('click', (event) => {
 
 socket.on('locationMessage', (message) => {
     const html = Mustache.render(locationTemplate, {
+        username: message.username,
         location: message.url,
         createdAt: moment(message.createdAt).format("h:mm a")
     });
@@ -64,3 +69,11 @@ function geolocationFinder() {
         });
     });
 }
+
+
+socket.emit('join', { username, room }, (error) => {
+    if (error) {
+        alert(error);
+        location.href = '/';
+    }
+});
