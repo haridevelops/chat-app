@@ -6,14 +6,40 @@ const $messageFormInput = document.querySelector('input')
 const $messageFormButton = document.querySelector('button')
 const $locationButton = document.getElementById("send-location");
 const $messages = document.querySelector("#messages");
+const $sidebar = document.querySelector("#sidebar");
 
 // Templates
 const messageTemplate = document.querySelector("#message-template").innerHTML;
 const locationTemplate = document.querySelector("#location-template").innerHTML;
+const sidebarTemplate = document.querySelector("#sidebar-template").innerHTML;
 
 
 // Options
 const { username, room } = Qs.parse(location.search, { ignoreQueryPrefix: true });
+
+const autoScroll = () => {
+    // new message element
+    const $newMessage = $messages.lastElementChild;
+
+    // height of the new message
+    const newMessageStyles = getComputedStyle($newMessage);
+    const newMessageMargin = parseInt(newMessageStyles.marginBottom);
+    const newMessageHeight = $messages.offsetHeight + newMessageMargin;
+
+    // visible height
+    const visibleHeight = $messages.offsetHeight;
+
+    // total height of the container
+    const containerHeight = $messages.scrollHeight;
+
+    // curr scroll position
+    const scrollOffset = $messages.scrollTop + visibleHeight;
+
+    if (containerHeight - newMessageHeight <= scrollOffset) {
+        $messages.scrollTop = $messages.scrollHeight;
+    }
+}
+
 
 socket.on('newUser', (message) => {
     const html = Mustache.render(messageTemplate, {
@@ -22,6 +48,7 @@ socket.on('newUser', (message) => {
         createdAt: moment(message.createdAt).format("h:mm a")
     });
     $messages.insertAdjacentHTML('beforeend', html);
+    autoScroll();
 })
 
 $messageForm.addEventListener('submit', (event) => {
@@ -55,6 +82,7 @@ socket.on('locationMessage', (message) => {
         createdAt: moment(message.createdAt).format("h:mm a")
     });
     $messages.insertAdjacentHTML('beforeend', html);
+    autoScroll();
 })
 
 function geolocationFinder() {
@@ -70,6 +98,12 @@ function geolocationFinder() {
     });
 }
 
+socket.on('roomData', ({ room, users })=> {
+    const html = Mustache.render(sidebarTemplate, {
+        room, users
+    })
+    $sidebar.innerHTML = html;
+});
 
 socket.emit('join', { username, room }, (error) => {
     if (error) {

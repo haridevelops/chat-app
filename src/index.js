@@ -27,6 +27,11 @@ io.on("connection", (socket) => {
 
         socket.emit('newUser', generateMessage('Admin', 'Welcome!'));
         socket.broadcast.to(user.room).emit('newUser', generateMessage('Admin', `${user.username} has joined!`));
+        io.to(user.room).emit('roomData', {
+            room: user.room,
+            users: getUsersInRoom(user.room)
+        })
+
 
         callback();
     });
@@ -49,13 +54,19 @@ io.on("connection", (socket) => {
         if (!user) return callback('Error message')
 
         io.to(user.room).emit('locationMessage', generateLocationMessage(user.username, `https://google.com/maps?q=${position.latitude},${position.longitude}`));
-        callback();Admin
+        callback();
     })
 
     socket.on('disconnect', () => {
         const user = removeUser(socket.id);
 
-        if (user) io.to(user.room).emit('newUser', generateMessage('Admin', `${user.username} has left!`));
+        if (user) {
+            io.to(user.room).emit('newUser', generateMessage('Admin', `${user.username} has left!`));
+            io.to(user.room).emit('roomData', {
+                room: user.room,
+                users: getUsersInRoom(user.room)
+            });
+        }
     })
 })
 
